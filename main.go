@@ -2,11 +2,13 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"go-web/db"
 	"go-web/routes"
 	"os"
 )
 
 func main() {
+	db.InitDB()
 	server := gin.Default()
 
 	server.Static("/static", "./static")
