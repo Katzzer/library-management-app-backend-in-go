@@ -38,6 +38,17 @@ p {
     font-size: 1.2rem;
     margin-bottom: 20px;
 }
+
+.links {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.links a {
+    margin-top: 10px;
+}
+
 a {
     text-decoration: none;
     color: white;

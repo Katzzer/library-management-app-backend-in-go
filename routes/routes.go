@@ -1,21 +1,14 @@
 package routes
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
 func RegisterRoutes(server *gin.Engine) {
-	server.GET("/ping", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "pong",
-		})
-	})
 
-	server.GET("/get-time", getTime)
+	server.GET("/", getWelcomePage)
 
-	server.GET("/webpage", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", nil)
-	})
+	server.GET("/api/v1/test", testBackend)
+	server.GET("/api/v1/get-time", getTime)
+
 }

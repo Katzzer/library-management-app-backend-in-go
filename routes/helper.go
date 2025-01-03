@@ -16,3 +16,9 @@ func getTime(context *gin.Context) {
 		"date": formattedDate,
 	})
 }
+
+func testBackend(context *gin.Context) {
+	context.JSON(200, gin.H{
+		"message": "Backend is working",
+	})
+}
