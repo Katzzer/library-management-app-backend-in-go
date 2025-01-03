@@ -9,6 +9,8 @@ import (
 func main() {
 	server := gin.Default()
 
+	server.LoadHTMLGlob("templates/*")
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
