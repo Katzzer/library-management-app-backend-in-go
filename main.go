@@ -9,6 +9,7 @@ import (
 func main() {
 	server := gin.Default()
 
+	server.Static("/static", "./static")
 	server.LoadHTMLGlob("templates/*")
 
 	port := os.Getenv("PORT")
@@ -17,5 +18,8 @@ func main() {
 	}
 
 	routes.RegisterRoutes(server)
-	server.Run(":" + port)
+	err := server.Run(":" + port)
+	if err != nil {
+		return
+	}
 }

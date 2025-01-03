@@ -13,6 +13,8 @@ func RegisterRoutes(server *gin.Engine) {
 		})
 	})
 
+	server.GET("/get-time", getTime)
+
 	server.GET("/webpage", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
