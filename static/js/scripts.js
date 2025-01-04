@@ -1,1 +1,1 @@
-console.log("Script test");
+console.log("Welcome to my website, all scripts are loaded");
