@@ -14,6 +14,7 @@ type Book struct {
 	Name              string     `json:"name" binding:"required"`
 	Author            string     `json:"author" binding:"required"`
 	Description       string     `json:"description" binding:"required"`
+	ImageName         string     `json:"image_name" binding:"required"`
 	ISBN              string     `json:"isbn" binding:"required"`
 	Borrowed          bool       `json:"borrowed"`                      // If the book is currently borrowed
 	LastBorrowedAt    *time.Time `json:"last_borrowed_at,omitempty"`    // Timestamp of the most recent borrow
@@ -41,6 +42,7 @@ func GetAllBooks() ([]Book, error) {
 			b.author, 
 			b.description, 
 			b.isbn,
+			b.image_name,
 			CASE 
 				WHEN COUNT(br.id) = 0 THEN FALSE -- No borrow records
 				WHEN MAX(br.returned_at) IS NULL THEN TRUE -- If no returned date, book is borrowed
@@ -54,7 +56,7 @@ func GetAllBooks() ([]Book, error) {
 			 LIMIT 1) AS current_borrower_id
 		FROM books b
 		LEFT JOIN borrow_records br ON b.id = br.book_id
-		GROUP BY b.id, b.name, b.author, b.description, b.isbn`
+		GROUP BY b.id, b.name, b.author, b.description, b.isbn, b.image_name`
 
 	rows, err := db.DB.Query(query)
 	if err != nil {
@@ -73,7 +75,8 @@ func GetAllBooks() ([]Book, error) {
 			&book.Author,
 			&book.Description,
 			&book.ISBN,
-			&book.Borrowed,
+			&book.ImageName, // Correctly set ImageName after ISBN
+			&book.Borrowed,  // Correctly set Borrowed as bool
 			&lastBorrowedAtString,
 			&lastReturnedAtString,
 			&currentBorrowerID,
@@ -124,6 +127,7 @@ func GetBookByID(id int64) (*Book, error) {
 			b.author, 
 			b.description,
 			b.isbn,
+			b.image_name,
 			CASE 
 				WHEN COUNT(br.id) = 0 THEN FALSE -- No borrow records
 				WHEN MAX(br.returned_at) IS NULL THEN TRUE -- If no returned date, book is borrowed
@@ -153,6 +157,7 @@ func GetBookByID(id int64) (*Book, error) {
 		&book.Author,
 		&book.Description,
 		&book.ISBN,
+		&book.ImageName,
 		&book.Borrowed,
 		&lastBorrowedAtString,
 		&lastReturnedAtString,

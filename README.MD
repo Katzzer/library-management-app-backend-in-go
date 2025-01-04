@@ -1,6 +1,7 @@
 # GoLang demo app
 
 ## Description
+- This application is written in Go Lang and server as restAPI for Library, where user could borrow and return books
 - This application uses SQLite for as a database
 - It has [welcome page at http://localhost:8080](http://localhost:8080)
 - All APIs are at `/api/v1/`
