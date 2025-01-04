@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-web/models"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 func getAllBooks(context *gin.Context) {
 	books, err := models.GetAllBooks()
 	if err != nil {
+		fmt.Printf("Error fetching books: %v\n", err)
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch books"})
 		return
 	}

@@ -1,17 +1,24 @@
 package models
 
 import (
+	"database/sql"
+	"fmt"
 	"go-web/db"
 	"time"
 )
 
 // Book model: A representation for books in the database
+// Book model: A representation for books in the database
 type Book struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name" binding:"required"`
-	Author      string `json:"author" binding:"required"`
-	Description string `json:"description" binding:"required"`
-	ISBN        string `json:"isbn" binding:"required"`
+	ID                int64      `json:"id"`
+	Name              string     `json:"name" binding:"required"`
+	Author            string     `json:"author" binding:"required"`
+	Description       string     `json:"description" binding:"required"`
+	ISBN              string     `json:"isbn" binding:"required"`
+	Borrowed          bool       `json:"borrowed"`                      // If the book is currently borrowed
+	LastBorrowedAt    *time.Time `json:"last_borrowed_at,omitempty"`    // Timestamp of the most recent borrow
+	LastReturnedAt    *time.Time `json:"last_returned_at,omitempty"`    // Timestamp of the most recent return
+	CurrentBorrowerID *int64     `json:"current_borrower_id,omitempty"` // ID of the current borrower, if any
 }
 
 // BorrowRecord model: Tracks books borrowed by users
@@ -23,39 +30,160 @@ type BorrowRecord struct {
 	ReturnedAt *time.Time `json:"returned_at"` // NULL if not yet returned
 }
 
-// GetAllBooks : Retrieve all books from the database
+// GetAllBooks : Retrieve all books from the database, including borrow information
 func GetAllBooks() ([]Book, error) {
 	var books []Book
 
-	query := `SELECT * FROM books`
+	query := `
+		SELECT 
+			b.id, 
+			b.name, 
+			b.author, 
+			b.description, 
+			b.isbn,
+			CASE 
+				WHEN COUNT(br.id) = 0 THEN FALSE -- No borrow records
+				WHEN MAX(br.returned_at) IS NULL THEN TRUE -- If no returned date, book is borrowed
+				ELSE FALSE 
+			END AS borrowed,
+			DATETIME(MAX(br.borrowed_at)) AS last_borrowed_at,
+			DATETIME(MAX(br.returned_at)) AS last_returned_at,
+			(SELECT br2.user_id 
+			 FROM borrow_records br2 
+			 WHERE br2.book_id = b.id AND br2.returned_at IS NULL
+			 LIMIT 1) AS current_borrower_id
+		FROM books b
+		LEFT JOIN borrow_records br ON b.id = br.book_id
+		GROUP BY b.id, b.name, b.author, b.description, b.isbn`
+
 	rows, err := db.DB.Query(query)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("database query error: %v", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		var book Book
-		err := rows.Scan(&book.ID, &book.Name, &book.Author, &book.Description, &book.ISBN)
+		var lastBorrowedAtString, lastReturnedAtString sql.NullString
+		var currentBorrowerID *int64 // Nullable for currently not borrowed
+
+		err := rows.Scan(
+			&book.ID,
+			&book.Name,
+			&book.Author,
+			&book.Description,
+			&book.ISBN,
+			&book.Borrowed,
+			&lastBorrowedAtString,
+			&lastReturnedAtString,
+			&currentBorrowerID,
+		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("row scanning error: %v", err)
 		}
+
+		// Convert strings to *time.Time
+		if lastBorrowedAtString.Valid {
+			parsedTime, err := time.Parse("2006-01-02 15:04:05", lastBorrowedAtString.String)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing last_borrowed_at: %v", err)
+			}
+			book.LastBorrowedAt = &parsedTime
+		} else {
+			book.LastBorrowedAt = nil
+		}
+
+		if lastReturnedAtString.Valid {
+			parsedTime, err := time.Parse("2006-01-02 15:04:05", lastReturnedAtString.String)
+			if err != nil {
+				return nil, fmt.Errorf("error parsing last_returned_at: %v", err)
+			}
+			book.LastReturnedAt = &parsedTime
+		} else {
+			book.LastReturnedAt = nil
+		}
+
+		book.CurrentBorrowerID = currentBorrowerID
+
 		books = append(books, book)
+	}
+
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("error during rows iteration: %v", rows.Err())
 	}
 
 	return books, nil
 }
 
-// GetBookByID : Retrieve a book by its ID
+// GetBookByID : Retrieve a book by its ID, including borrow information
 func GetBookByID(id int64) (*Book, error) {
-	query := `SELECT * FROM books WHERE id=?`
+	query := `
+		SELECT 
+			b.id, 
+			b.name, 
+			b.author, 
+			b.description,
+			b.isbn,
+			CASE 
+				WHEN COUNT(br.id) = 0 THEN FALSE -- No borrow records
+				WHEN MAX(br.returned_at) IS NULL THEN TRUE -- If no returned date, book is borrowed
+				ELSE FALSE
+			END AS borrowed,
+			DATETIME(MAX(br.borrowed_at)) AS last_borrowed_at,
+			DATETIME(MAX(br.returned_at)) AS last_returned_at,
+			(SELECT br2.user_id 
+			 FROM borrow_records br2 
+			 WHERE br2.book_id = b.id AND br2.returned_at IS NULL
+			 LIMIT 1) AS current_borrower_id
+		FROM books b
+		LEFT JOIN borrow_records br ON b.id = br.book_id
+		WHERE b.id = ?
+		GROUP BY b.id, b.name, b.author, b.description, b.isbn`
+
 	row := db.DB.QueryRow(query, id)
 
 	var book Book
-	err := row.Scan(&book.ID, &book.Name, &book.Author, &book.Description, &book.ISBN)
+	var lastBorrowedAtString, lastReturnedAtString sql.NullString
+	var currentBorrowerID *int64
+
+	// Scan the result row
+	err := row.Scan(
+		&book.ID,
+		&book.Name,
+		&book.Author,
+		&book.Description,
+		&book.ISBN,
+		&book.Borrowed,
+		&lastBorrowedAtString,
+		&lastReturnedAtString,
+		&currentBorrowerID,
+	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("row scanning error: %v", err)
 	}
+
+	// Convert strings to *time.Time
+	if lastBorrowedAtString.Valid {
+		parsedTime, err := time.Parse("2006-01-02 15:04:05", lastBorrowedAtString.String)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing last_borrowed_at: %v", err)
+		}
+		book.LastBorrowedAt = &parsedTime
+	} else {
+		book.LastBorrowedAt = nil
+	}
+
+	if lastReturnedAtString.Valid {
+		parsedTime, err := time.Parse("2006-01-02 15:04:05", lastReturnedAtString.String)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing last_returned_at: %v", err)
+		}
+		book.LastReturnedAt = &parsedTime
+	} else {
+		book.LastReturnedAt = nil
+	}
+
+	book.CurrentBorrowerID = currentBorrowerID
 
 	return &book, nil
 }
