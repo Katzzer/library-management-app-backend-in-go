@@ -19,72 +19,79 @@ func InitDB() {
 	DB.SetMaxIdleConns(5)
 
 	createTables()
+
+	insertTestData()
 }
 
 func createTables() {
+	// Users Table
 	createUsersTable := `
 	CREATE TABLE IF NOT EXISTS users (
-	    id INTEGER PRIMARY KEY AUTOINCREMENT,
+	    id INTEGER PRIMARY KEY, -- SQLite provides autoincrement functionality when using INTEGER PRIMARY KEY
 	    email TEXT NOT NULL UNIQUE,
 	    password TEXT NOT NULL 
 	)
 	`
 
 	_, err := DB.Exec(createUsersTable)
-
 	if err != nil {
 		panic("Could not create users table.")
 	}
 
-}
-
-func createTables() {
-	createUsersTable := `
-	CREATE TABLE IF NOT EXISTS users (
-	    id INTEGER PRIMARY KEY AUTOINCREMENT,
-	    email TEXT NOT NULL UNIQUE,
-	    password TEXT NOT NULL 
-	)
-	`
-
-	_, err := DB.Exec(createUsersTable)
-
-	if err != nil {
-		panic("Could not create users table.")
-	}
-
-	createEventsTable := `
-	CREATE TABLE IF NOT EXISTS events (
-	    id INTEGER PRIMARY KEY AUTOINCREMENT,
+	// Books Table
+	createBooksTable := `
+	CREATE TABLE IF NOT EXISTS books (
+	    id INTEGER PRIMARY KEY, -- PRIMARY KEY with INTEGER ensures auto-increment behavior
 	    name TEXT NOT NULL,
+	    author TEXT NOT NULL,
 	    description TEXT NOT NULL,
-	    location TEXT NOT NULL,
-	    dateTime DATETIME NOT NULL,
-	    user_id INTEGER,
+	    isbn TEXT NOT NULL UNIQUE
+	)
+	`
+
+	_, err = DB.Exec(createBooksTable)
+	if err != nil {
+		panic("Could not create books table.")
+	}
+
+	// Borrow Records Table
+	createBorrowRecordsTable := `
+	CREATE TABLE IF NOT EXISTS borrow_records (
+	    id INTEGER PRIMARY KEY, -- PRIMARY KEY with INTEGER ensures auto-increment behavior
+	    book_id INTEGER NOT NULL,
+	    user_id INTEGER NOT NULL,
+	    borrowed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	    returned_at DATETIME,
+	    FOREIGN KEY (book_id) REFERENCES books(id),
 	    FOREIGN KEY (user_id) REFERENCES users(id)
 	)
 	`
 
-	_, err = DB.Exec(createEventsTable)
-
+	_, err = DB.Exec(createBorrowRecordsTable)
 	if err != nil {
-		panic("Could not create events table.")
+		panic("Could not create borrow_records table.")
 	}
+}
 
-	createRegistrationTable := `
-	CREATE TABLE IF NOT EXISTS registrations (
-	    id INTEGER PRIMARY KEY AUTOINCREMENT,
-	    event_ID INTEGER,
-	    user_id INTEGER,
-	    FOREIGN KEY (event_id) REFERENCES events(id),
-	    FOREIGN KEY (user_id) REFERENCES users(id)
-	)
+// insertTestData: Inserts initial test data into the books table
+func insertTestData() {
+	insertBooks := `
+	INSERT INTO books (name, author, description, isbn) VALUES
+	('The Catcher in the Rye', 'J.D. Salinger', 'A story about adolescent alienation and loss of innocence.', '9780316769488'),
+	('To Kill a Mockingbird', 'Harper Lee', 'A novel of race and injustice in the Deep South.', '9780061120084'),
+	('1984', 'George Orwell', 'A dystopian novel set in a totalitarian regime.', '9780451524935'),
+	('The Great Gatsby', 'F. Scott Fitzgerald', 'A critique of the American Dream in the Jazz Age.', '9780743273565'),
+
+	-- Programming Books
+	('Effective Java', 'Joshua Bloch', 'Comprehensive coding practices for writing robust and modern Java programs.', '9780134685991'),
+	('The Go Programming Language', 'Alan A. A. Donovan and Brian W. Kernighan', 'A thorough introduction to programming with GoLang.', '9780134190440'),
+	('Learning React', 'Alex Banks and Eve Porcello', 'A hands-on guide to building web interfaces using React.', '9781491954621'),
+	('Next.js in Action', 'Liang Yi', 'Learn to build scalable and fast web applications with Next.js.', '9781617297343')
 	`
 
-	_, err = DB.Exec(createRegistrationTable)
-
+	_, err := DB.Exec(insertBooks)
 	if err != nil {
-		panic("Could not create registration table.")
+		// Log the error but don't panic, as the data might already exist
+		println("Warning: Could not insert test data into the books table. It might already exist.")
 	}
-
 }
