@@ -20,7 +20,7 @@ func signUp(context *gin.Context) {
 	err = user.Save()
 
 	if err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "could not save user"})
+		context.JSON(http.StatusConflict, gin.H{"error": "could not save user"})
 		return
 	}
 
