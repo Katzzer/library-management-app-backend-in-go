@@ -1,22 +1,47 @@
 package routes
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go-web/models"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 // List all books
 func getAllBooks(context *gin.Context) {
 	books, err := models.GetAllBooks()
 	if err != nil {
-		fmt.Printf("Error fetching books: %v\n", err)
-		context.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch books"})
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to retrieve books", "error": err.Error()})
 		return
 	}
-	context.JSON(http.StatusOK, books)
+
+	// Transform books to add `lastBorrowedAtString` and `lastReturnedAtString`
+	var response []gin.H
+	for _, book := range books {
+		response = append(response, gin.H{
+			"id":                  book.ID,
+			"name":                book.Name,
+			"author":              book.Author,
+			"description":         book.Description,
+			"isbn":                book.ISBN,
+			"image_name":          book.ImageName,
+			"borrowed":            book.Borrowed,
+			"last_borrowed_at":    formatTimeToString(book.LastBorrowedAt),
+			"last_returned_at":    formatTimeToString(book.LastReturnedAt),
+			"current_borrower_id": book.CurrentBorrowerID,
+		})
+	}
+
+	context.JSON(http.StatusOK, response)
+}
+
+// Helper function to format *time.Time to a string or make it empty if nil
+func formatTimeToString(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format("2006-01-02 15:04:05") // Adjust format as needed
 }
 
 // Get details of a specific book
