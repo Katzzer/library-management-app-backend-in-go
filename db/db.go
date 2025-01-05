@@ -2,7 +2,11 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"io"
+	"log"
+	"os"
 )
 
 var DB *sql.DB
@@ -74,25 +78,38 @@ func createTables() {
 	}
 }
 
-// insertTestData: Inserts initial test data into the books table
+// insertTestData: Inserts initial data into the books table
 func insertTestData() {
-	insertBooks := `
-	INSERT INTO books (name, author, description, isbn, image_name) VALUES
-	('The Catcher in the Rye', 'J.D. Salinger', 'A story about adolescent alienation and loss of innocence.', '9780316769488', 'The_Catcher_in_the_Rye.jpg'),
-	('To Kill a Mockingbird', 'Harper Lee', 'A novel of race and injustice in the Deep South.', '9780061120084', 'To_Kill_a_Mockingbird.jpg'),
-	('1984', 'George Orwell', 'A dystopian novel set in a totalitarian regime.', '9780451524935', '1984.jpg'),
-	('The Great Gatsby', 'F. Scott Fitzgerald', 'A critique of the American Dream in the Jazz Age.', '9780743273565', 'The_Great_Gatsby.jpg'),
 
-	-- Programming Books
-	('Effective Java', 'Joshua Bloch', 'Comprehensive coding practices for writing robust and modern Java programs.', '9780134685991', 'Effective_Java.jpg'),
-	('The Go Programming Language', 'Alan A. A. Donovan and Brian W. Kernighan', 'A thorough introduction to programming with GoLang.', '9780134190440', 'The_Go_Programming_Language.jpg'),
-	('Learning React', 'Alex Banks and Eve Porcello', 'A hands-on guide to building web interfaces using React.', '9781491954621', 'Learning_React.jpg'),
-	('Next.js in Action', 'Liang Yi', 'Learn to build scalable and fast web applications with Next.js.', '9781617297343', 'Next.js_in_Action.jpg')
-	`
-
-	_, err := DB.Exec(insertBooks)
+	err := insertTestDataFromFile("sql/books.sql", DB)
 	if err != nil {
 		// Log the error but don't panic, as the data might already exist
 		println("Warning: Could not insert test data into the books table. It might already exist.")
+		return
 	}
+
+}
+
+func insertTestDataFromFile(filepath string, db *sql.DB) error {
+	// Open the SQL file
+	sqlFile, err := os.Open(filepath)
+	if err != nil {
+		return fmt.Errorf("failed to open SQL file: %v", err)
+	}
+	defer sqlFile.Close()
+
+	// Read all content of the file
+	sqlData, err := io.ReadAll(sqlFile)
+	if err != nil {
+		return fmt.Errorf("failed to read SQL file: %v", err)
+	}
+
+	// Execute the SQL file content
+	_, err = db.Exec(string(sqlData))
+	if err != nil {
+		return fmt.Errorf("failed to execute SQL script: %v", err)
+	}
+
+	log.Println("SQL script executed successfully.")
+	return nil
 }
