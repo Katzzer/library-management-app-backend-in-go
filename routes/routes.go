@@ -20,8 +20,9 @@ func RegisterRoutes(server *gin.Engine) {
 	authenticated.Use(middlewares.Authenticate)
 
 	// Book Routes
-	authenticated.GET("/api/v1/books", getAllBooks)            // List all books
-	authenticated.GET("/api/v1/books/:id", getBook)            // Get details of a specific book
-	authenticated.POST("/api/v1/books/:id/borrow", borrowBook) // Borrow a book
-	authenticated.POST("/api/v1/books/:id/return", returnBook) // Return a borrowed book
+	authenticated.GET("/api/v1/books", getAllBooks)
+	authenticated.GET("/api/v1/borrowed-books", borrowBook)
+	authenticated.GET("/api/v1/books/:id", getBook)
+	authenticated.POST("/api/v1/books/:id/borrow", borrowBook)
+	authenticated.POST("/api/v1/books/:id/return", returnBook)
 }

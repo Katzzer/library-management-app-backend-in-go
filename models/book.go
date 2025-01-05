@@ -8,7 +8,6 @@ import (
 )
 
 // Book model: A representation for books in the database
-// Book model: A representation for books in the database
 type Book struct {
 	ID                int64      `json:"id"`
 	Name              string     `json:"name" binding:"required"`
@@ -82,8 +81,8 @@ func GetAllBooks() ([]Book, error) {
 			&book.Author,
 			&book.Description,
 			&book.ISBN,
-			&book.ImageName, // Correctly set ImageName after ISBN
-			&book.Borrowed,  // Correctly set Borrowed as bool
+			&book.ImageName,
+			&book.Borrowed,
 			&lastBorrowedAtString,
 			&lastReturnedAtString,
 			&currentBorrowerID,
