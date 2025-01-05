@@ -60,9 +60,10 @@ func GetAllBooks() ([]Book, error) {
         WHERE br2.book_id = b.id AND br2.returned_at IS NULL
         ORDER BY br2.borrowed_at DESC
         LIMIT 1) AS current_borrower_id
-FROM books b
-LEFT JOIN borrow_records br ON b.id = br.book_id
-GROUP BY b.id, b.name, b.author, b.description, b.isbn, b.image_name`
+	FROM books b
+	LEFT JOIN borrow_records br ON b.id = br.book_id
+	GROUP BY b.id, b.name, b.author, b.description, b.isbn, b.image_name
+	ORDER BY b.id ASC;`
 
 	rows, err := db.DB.Query(query)
 	if err != nil {
