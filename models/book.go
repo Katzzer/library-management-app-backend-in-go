@@ -37,26 +37,32 @@ func GetAllBooks() ([]Book, error) {
 
 	query := `
 		SELECT 
-			b.id, 
-			b.name, 
-			b.author, 
-			b.description, 
-			b.isbn,
-			b.image_name,
-			CASE 
-				WHEN COUNT(br.id) = 0 THEN FALSE -- No borrow records
-				WHEN MAX(br.returned_at) IS NULL THEN TRUE -- If no returned date, book is borrowed
-				ELSE FALSE 
-			END AS borrowed,
-			DATETIME(MAX(br.borrowed_at)) AS last_borrowed_at,
-			DATETIME(MAX(br.returned_at)) AS last_returned_at,
-			(SELECT br2.user_id 
-			 FROM borrow_records br2 
-			 WHERE br2.book_id = b.id AND br2.returned_at IS NULL
-			 LIMIT 1) AS current_borrower_id
-		FROM books b
-		LEFT JOIN borrow_records br ON b.id = br.book_id
-		GROUP BY b.id, b.name, b.author, b.description, b.isbn, b.image_name`
+    b.id, 
+    b.name, 
+    b.author, 
+    b.description, 
+    b.isbn,
+    b.image_name,
+    CASE 
+        WHEN EXISTS (
+            SELECT 1
+            FROM borrow_records br2
+            WHERE br2.book_id = b.id AND br2.returned_at IS NULL
+            ORDER BY br2.borrowed_at DESC
+            LIMIT 1
+        ) THEN TRUE -- Currently borrowed
+        ELSE FALSE -- Not borrowed
+    END AS borrowed,
+    DATETIME(MAX(br.borrowed_at)) AS last_borrowed_at,
+    DATETIME(MAX(br.returned_at)) AS last_returned_at,
+    (SELECT br2.user_id 
+        FROM borrow_records br2 
+        WHERE br2.book_id = b.id AND br2.returned_at IS NULL
+        ORDER BY br2.borrowed_at DESC
+        LIMIT 1) AS current_borrower_id
+FROM books b
+LEFT JOIN borrow_records br ON b.id = br.book_id
+GROUP BY b.id, b.name, b.author, b.description, b.isbn, b.image_name`
 
 	rows, err := db.DB.Query(query)
 	if err != nil {
@@ -122,27 +128,33 @@ func GetAllBooks() ([]Book, error) {
 func GetBookByID(id int64) (*Book, error) {
 	query := `
 		SELECT 
-			b.id, 
-			b.name, 
-			b.author, 
-			b.description,
-			b.isbn,
-			b.image_name,
-			CASE 
-				WHEN COUNT(br.id) = 0 THEN FALSE -- No borrow records
-				WHEN MAX(br.returned_at) IS NULL THEN TRUE -- If no returned date, book is borrowed
-				ELSE FALSE
-			END AS borrowed,
-			DATETIME(MAX(br.borrowed_at)) AS last_borrowed_at,
-			DATETIME(MAX(br.returned_at)) AS last_returned_at,
-			(SELECT br2.user_id 
-			 FROM borrow_records br2 
-			 WHERE br2.book_id = b.id AND br2.returned_at IS NULL
-			 LIMIT 1) AS current_borrower_id
-		FROM books b
-		LEFT JOIN borrow_records br ON b.id = br.book_id
-		WHERE b.id = ?
-		GROUP BY b.id, b.name, b.author, b.description, b.isbn`
+    b.id, 
+    b.name, 
+    b.author, 
+    b.description,
+    b.isbn,
+    b.image_name,
+    CASE 
+        WHEN EXISTS (
+            SELECT 1
+            FROM borrow_records br2
+            WHERE br2.book_id = b.id AND br2.returned_at IS NULL
+            ORDER BY br2.borrowed_at DESC
+            LIMIT 1
+        ) THEN TRUE -- Currently borrowed
+        ELSE FALSE -- Not borrowed
+    END AS borrowed,
+    DATETIME(MAX(br.borrowed_at)) AS last_borrowed_at,
+    DATETIME(MAX(br.returned_at)) AS last_returned_at,
+    (SELECT br2.user_id 
+        FROM borrow_records br2
+        WHERE br2.book_id = b.id AND br2.returned_at IS NULL
+        ORDER BY br2.borrowed_at DESC
+        LIMIT 1) AS current_borrower_id
+	FROM books b
+	LEFT JOIN borrow_records br ON b.id = br.book_id
+	WHERE b.id = ?
+	GROUP BY b.id, b.name, b.author, b.description, b.isbn`
 
 	row := db.DB.QueryRow(query, id)
 
