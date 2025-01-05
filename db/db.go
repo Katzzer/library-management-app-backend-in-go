@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/glebarez/sqlite"
 	"io"
 	"log"
 	"os"
@@ -13,7 +13,7 @@ var DB *sql.DB
 
 func InitDB() {
 	var err error
-	DB, err = sql.Open("sqlite3", "api.db")
+	DB, err = sql.Open("sqlite", "api.db")
 
 	if err != nil {
 		panic("Could not connect to database.")
@@ -28,6 +28,7 @@ func InitDB() {
 }
 
 func createTables() {
+
 	// Users Table
 	createUsersTable := `
 	CREATE TABLE IF NOT EXISTS users (
@@ -40,6 +41,7 @@ func createTables() {
 
 	_, err := DB.Exec(createUsersTable)
 	if err != nil {
+		log.Fatalf("Error creating users table: %v", err)
 		panic("Could not create users table.")
 	}
 
