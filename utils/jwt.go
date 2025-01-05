@@ -2,20 +2,36 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"github.com/golang-jwt/jwt/v5"
+	"go-web/db"
 	"time"
 )
 
-const secretKey = "supersecretkey"
+const secretKey = "supersecretkey" // TODO: change this secretKey, use Environmental Variables
 
 func GenerateToken(email string, userId int64) (string, error) {
+	// Create a new JWT token with the given claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"email":  email,
 		"userId": userId,
-		"exp":    time.Now().Add(time.Hour * 2).Unix(),
+		"exp":    time.Now().Add(time.Hour * 2).Unix(), // Token valid for 2 hours
 	})
 
-	return token.SignedString([]byte(secretKey))
+	// Sign the token with the secret key
+	tokenString, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %v", err)
+	}
+
+	// Save the generated token to the database as the latest JWT for the user
+	query := `UPDATE users SET latest_jwt_token = ? WHERE id = ?`
+	_, err = db.DB.Exec(query, tokenString, userId)
+	if err != nil {
+		return "", fmt.Errorf("failed to save token to database: %v", err)
+	}
+
+	return tokenString, nil
 }
 
 func VerifyToken(token string) (int64, error) {

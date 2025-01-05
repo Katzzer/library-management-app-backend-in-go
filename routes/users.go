@@ -24,7 +24,17 @@ func signUp(context *gin.Context) {
 		return
 	}
 
-	context.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
+	// The correct ID is now set in user.ID after user.Save()
+	token, err := utils.GenerateToken(user.Email, user.ID)
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate token"})
+		return
+	}
+
+	context.JSON(http.StatusCreated, gin.H{
+		"message": "User created successfully",
+		"token":   token,
+	})
 }
 
 func login(context *gin.Context) {

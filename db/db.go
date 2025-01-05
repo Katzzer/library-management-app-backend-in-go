@@ -33,7 +33,8 @@ func createTables() {
 	CREATE TABLE IF NOT EXISTS users (
 	    id INTEGER PRIMARY KEY, -- SQLite provides autoincrement functionality when using INTEGER PRIMARY KEY
 	    email TEXT NOT NULL UNIQUE,
-	    password TEXT NOT NULL 
+	    password TEXT NOT NULL,
+	    latest_jwt_token TEXT
 	)
 	`
 
