@@ -3,14 +3,26 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"go-web/middlewares"
+	"time"
 )
 
+var startTime time.Time
+
 func RegisterRoutes(server *gin.Engine) {
+	startTime = time.Now()
+
+	//server.Use(cors.New(cors.Config{
+	//	AllowOrigins:     []string{"*"}, // Allow all origins
+	//	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	//	AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+	//	ExposeHeaders:    []string{"Content-Length"},
+	//	AllowCredentials: true,
+	//	MaxAge:           12 * time.Hour,
+	//}))
 
 	// Public Routes
 	server.GET("/", getWelcomePage)
-	server.GET("/api/v1/others/health-check", testBackend)
-	server.GET("/api/v1/others/get-time", getTime)
+	server.GET("/api/health-check", HealthCheckHandler)
 
 	server.POST("/api/v1/registration/signup", signUp)
 	server.POST("/api/v1/registration/login", login)
