@@ -13,7 +13,7 @@ func RegisterRoutes(server *gin.Engine) {
 	startTime = time.Now()
 
 	server.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:4200", "http://localhost:3000", "https://library-management-app-frontend.pavelkostal.com/", "https://library-management-app-frontend-angular.pavelkostal.com/"}, // Only allow these origins
+		AllowOrigins:     []string{"http://localhost:4200", "http://localhost:3000", "https://library-management-app-frontend.pavelkostal.com", "https://library-management-app-frontend-angular.pavelkostal.com"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
