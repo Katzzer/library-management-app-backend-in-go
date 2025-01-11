@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"go-web/middlewares"
 	"time"
@@ -11,14 +12,14 @@ var startTime time.Time
 func RegisterRoutes(server *gin.Engine) {
 	startTime = time.Now()
 
-	//server.Use(cors.New(cors.Config{
-	//	AllowOrigins:     []string{"*"}, // Allow all origins
-	//	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-	//	AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-	//	ExposeHeaders:    []string{"Content-Length"},
-	//	AllowCredentials: true,
-	//	MaxAge:           12 * time.Hour,
-	//}))
+	server.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:4200", "http://localhost:3000", "https://library-management-app-frontend.pavelkostal.com/", "https://library-management-app-frontend-angular.pavelkostal.com/"}, // Only allow these origins
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true, // Allow cookies to be sent
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// Public Routes
 	server.GET("/", getWelcomePage)
